@@ -1,12 +1,22 @@
-import google.generativeai as genai
 import os
-API_KEY = os.getenv("GEMINI_API_KEY")
+import streamlit as st
+import google.generativeai as genai
 
-genai.configure(api_key=API_KEY)
-
-model = genai.GenerativeModel("gemini-2.5-flash")
+def get_api_key():
+    key = os.getenv("GEMINI_API_KEY")
+    if not key and hasattr(st, "secrets"):
+        try:
+            key = st.secrets.get("GEMINI_API_KEY")
+        except Exception:
+            pass
+    return key
 
 def generate_summary(text):
+    api_key = get_api_key()
+    if api_key:
+        genai.configure(api_key=api_key)
+
+    model = genai.GenerativeModel("gemini-2.5-flash")
 
     prompt = f"""
     Summarize the following notes in simple language:
@@ -15,5 +25,4 @@ def generate_summary(text):
     """
 
     response = model.generate_content(prompt)
-
-    return response.text
+    return response.text
