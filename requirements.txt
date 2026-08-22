@@ -3,3 +3,7 @@ google-generativeai
 PyPDF2
 pandas
 numpy
+fastapi
+uvicorn
+python-multipart
+pydantic
