@@ -3,10 +3,10 @@ import streamlit as st
 import google.generativeai as genai
 
 def get_api_key():
-    key = os.getenv("GEMINI_API_KEY") or os.getenv("GEMINI_KEY")
+    key = os.getenv("GEMINI_API_KEY") or os.getenv("AQ.Ab8RN6Kptadz8MH2ZRVL3eKUBvOIMfzVnDMHDDWK14wCNrfhkA")
     if not key and hasattr(st, "secrets"):
         try:
-            key = st.secrets.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_KEY")
+            key = st.secrets.get("GEMINI_API_KEY") or st.secrets.get("AQ.Ab8RN6Kptadz8MH2ZRVL3eKUBvOIMfzVnDMHDDWK14wCNrfhkA")
         except Exception:
             pass
     return key
