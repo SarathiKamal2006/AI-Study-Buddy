@@ -12,12 +12,16 @@ EMBEDDING_MODEL = "models/text-embedding-004"
 
 
 def get_api_key():
-    key = os.getenv("AQ.Ab8RN6Kptadz8MH2ZRVL3eKUBvOIMfzVnDMHDDWK14wCNrfhkA")
+    # 1. Environment Variable
+    key = os.getenv("GEMINI_API_KEY") or os.getenv("AQ.Ab8RN6Kptadz8MH2ZRVL3eKUBvOIMfzVnDMHDDWK14wCNrfhkA")
+
+    # 2. Streamlit Secrets
     if not key and hasattr(st, "secrets"):
         try:
-            key = st.secrets.get("AQ.Ab8RN6Kptadz8MH2ZRVL3eKUBvOIMfzVnDMHDDWK14wCNrfhkA")
+            key = st.secrets.get("GEMINI_API_KEY") or st.secrets.get("AQ.Ab8RN6Kptadz8MH2ZRVL3eKUBvOIMfzVnDMHDDWK14wCNrfhkA")
         except Exception:
             pass
+
     return key
 
 
@@ -27,7 +31,7 @@ def configure_genai():
         genai.configure(api_key=key)
 
 
-def chunk_text(text, chunk_size=800, overlap=100):
+def chunk_text(text, chunk_size=1500, overlap=150):
     """Splits full text into overlapping text chunks."""
     if not text:
         return []
@@ -46,25 +50,6 @@ def chunk_text(text, chunk_size=800, overlap=100):
     return chunks
 
 
-def get_embedding(text_str):
-    """Generates vector embedding for input text using Gemini Embedding API."""
-    configure_genai()
-    try:
-        response = genai.embed_content(
-            model=EMBEDDING_MODEL,
-            content=text_str,
-            task_type="retrieval_document"
-        )
-        return response["embedding"]
-    except Exception:
-        # Fallback to general embedding model if specific task model is unavailable
-        response = genai.embed_content(
-            model="models/embedding-001",
-            content=text_str
-        )
-        return response["embedding"]
-
-
 def cosine_similarity(vec_a, vec_b):
     """Calculates cosine similarity between two 1D vectors."""
     dot_product = np.dot(vec_a, vec_b)
@@ -79,19 +64,47 @@ class RAGSystem:
     def __init__(self, text):
         self.raw_text = text
         self.chunks = chunk_text(text)
-        self.embeddings = []
+        self.embeddings = np.array([])
         self._build_index()
 
     def _build_index(self):
-        """Creates embeddings for all chunks in document."""
+        """Creates vector embeddings for all document chunks in batch."""
         if not self.chunks:
             return
 
-        for chunk in self.chunks:
-            emb = get_embedding(chunk)
-            self.embeddings.append(emb)
+        configure_genai()
 
-        self.embeddings = np.array(self.embeddings)
+        # Batch embed all chunks in a single API call for maximum speed
+        try:
+            res = genai.embed_content(
+                model=EMBEDDING_MODEL,
+                content=self.chunks,
+                task_type="retrieval_document"
+            )
+            self.embeddings = np.array(res["embedding"])
+        except Exception:
+            # Fallback to batch embedding with default model
+            try:
+                res = genai.embed_content(
+                    model="models/embedding-001",
+                    content=self.chunks
+                )
+                self.embeddings = np.array(res["embedding"])
+            except Exception:
+                # If large batch fails, process in mini-batches of 10
+                embs = []
+                batch_size = 10
+                for i in range(0, len(self.chunks), batch_size):
+                    batch = self.chunks[i:i + batch_size]
+                    try:
+                        b_res = genai.embed_content(
+                            model="models/embedding-001",
+                            content=batch
+                        )
+                        embs.extend(b_res["embedding"])
+                    except Exception:
+                        pass
+                self.embeddings = np.array(embs)
 
     def retrieve(self, query, top_k=3):
         """Retrieves top_k relevant text chunks for a user query."""
@@ -137,4 +150,3 @@ Answer:
 """
         response = model.generate_content(prompt)
         return response.text, relevant_chunks
-
