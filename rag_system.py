@@ -21,7 +21,10 @@ def get_api_key():
     if not key and "gemini_api_key" in st.session_state:
         key = st.session_state.get("gemini_api_key")
 
-    return key
+    if key and isinstance(key, str):
+        key = key.strip()
+
+    return key if key else None
 
 
 def configure_genai():
@@ -132,12 +135,15 @@ class RAGSystem:
 
     def answer_question(self, query, top_k=3):
         """Answers user question using retrieved chunk context and Gemini."""
-        configure_genai()
-        model = genai.GenerativeModel("gemini-2.5-flash")
-        relevant_chunks = self.retrieve(query, top_k=top_k)
-        context = "\n\n---\n\n".join(relevant_chunks)
+        if not configure_genai():
+            return "⚠️ **Gemini API Key Missing**: Please enter your Gemini API key in the sidebar configuration or set `GEMINI_API_KEY` in Streamlit Cloud Secrets.", []
 
-        prompt = f"""
+        try:
+            model = genai.GenerativeModel("gemini-2.5-flash")
+            relevant_chunks = self.retrieve(query, top_k=top_k)
+            context = "\n\n---\n\n".join(relevant_chunks)
+
+            prompt = f"""
 You are an intelligent study assistant. Answer the user's question using ONLY the provided document context.
 If the answer cannot be found in the context, politely state that the document does not contain relevant information.
 
@@ -149,5 +155,10 @@ Question:
 
 Answer:
 """
-        response = model.generate_content(prompt)
-        return response.text, relevant_chunks
+            response = model.generate_content(prompt)
+            return response.text, relevant_chunks
+        except Exception as e:
+            err_str = str(e)
+            if "Unauthenticated" in err_str or "API_KEY_INVALID" in err_str or "401" in err_str or "PermissionDenied" in err_str:
+                return "🔑 **Authentication Failed**: The Gemini API Key provided is invalid, unauthorized, or expired. Please enter a valid key from Google AI Studio in the sidebar.", []
+            return f"⚠️ **Error generating answer**: {err_str}", []

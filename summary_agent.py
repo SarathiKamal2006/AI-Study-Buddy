@@ -11,22 +11,29 @@ def get_api_key():
             pass
     if not key and "gemini_api_key" in st.session_state:
         key = st.session_state.get("gemini_api_key")
-    return key
+    if key and isinstance(key, str):
+        key = key.strip()
+    return key if key else None
 
 def generate_summary(text):
     api_key = get_api_key()
     if not api_key:
-        return "⚠️ Error: Gemini API Key is missing. Please set GEMINI_API_KEY in your environment, Streamlit secrets, or sidebar."
+        return "⚠️ **Gemini API Key Missing**: Please enter your Gemini API key in the sidebar configuration or set `GEMINI_API_KEY` in Streamlit Cloud Secrets."
     
-    genai.configure(api_key=api_key)
+    try:
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel("gemini-2.5-flash")
 
-    model = genai.GenerativeModel("gemini-2.5-flash")
+        prompt = f"""
+        Summarize the following notes in simple language:
 
-    prompt = f"""
-    Summarize the following notes in simple language:
+        {text}
+        """
 
-    {text}
-    """
-
-    response = model.generate_content(prompt)
-    return response.text
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        err_str = str(e)
+        if "Unauthenticated" in err_str or "API_KEY_INVALID" in err_str or "401" in err_str or "PermissionDenied" in err_str:
+            return "🔑 **Authentication Failed**: The Gemini API Key provided is invalid, unauthorized, or expired. Please enter a valid key from Google AI Studio in the sidebar."
+        return f"⚠️ **Error generating summary**: {err_str}"
