@@ -3,6 +3,11 @@ import streamlit as st
 import google.generativeai as genai
 
 def get_api_key():
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except Exception:
+        pass
     key = os.getenv("GEMINI_API_KEY") or os.getenv("GEMINI_KEY")
     if not key and hasattr(st, "secrets"):
         try:
