@@ -7,25 +7,6 @@ from rag_system import RAGSystem
 
 st.set_page_config(page_title="AI Study Buddy", layout="wide", page_icon="📚")
 
-st.sidebar.title("⚙️ Configuration")
-api_key_input = st.sidebar.text_input(
-    "Gemini API Key", 
-    type="password", 
-    help="Enter your Gemini API key if not set in environment or Streamlit secrets"
-)
-
-if api_key_input:
-    st.session_state["gemini_api_key"] = api_key_input.strip()
-
-# Check active key status
-from summary_agent import get_api_key
-active_key = get_api_key()
-if active_key:
-    st.sidebar.success("✅ API Key Configured")
-else:
-    st.sidebar.warning("⚠️ API Key Required")
-    st.sidebar.markdown("[🔑 Get a free Gemini API key](https://aistudio.google.com/app/apikey)")
-
 st.title("📚 AI Study Buddy")
 st.write("Upload your study notes or PDF documents to summarize, generate quizzes, or ask specific questions using RAG!")
 
