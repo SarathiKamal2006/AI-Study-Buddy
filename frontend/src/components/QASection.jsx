@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE } from '../api';
 
 export default function QASection({ docId }) {
   const [query, setQuery] = useState('');
@@ -16,7 +17,7 @@ export default function QASection({ docId }) {
     setError('');
 
     try {
-      const response = await fetch('/api/qa', {
+      const response = await fetch(`${API_BASE}/api/qa`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ doc_id: docId, query: query.trim() })

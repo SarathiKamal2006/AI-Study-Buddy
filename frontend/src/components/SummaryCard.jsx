@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE } from '../api';
 
 export default function SummaryCard({ docId }) {
   const [summary, setSummary] = useState('');
@@ -10,7 +11,7 @@ export default function SummaryCard({ docId }) {
     setIsLoading(true);
     setError('');
     try {
-      const response = await fetch('/api/summary', {
+      const response = await fetch(`${API_BASE}/api/summary`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ doc_id: docId })

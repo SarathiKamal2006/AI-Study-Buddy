@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE } from '../api';
 
 export default function UploadSection({ onUploadSuccess, docInfo, isUploading, setIsUploading }) {
   const [dragOver, setDragOver] = useState(false);
@@ -18,7 +19,7 @@ export default function UploadSection({ onUploadSuccess, docInfo, isUploading, s
     formData.append('file', file);
 
     try {
-      const response = await fetch('/api/upload', {
+      const response = await fetch(`${API_BASE}/api/upload`, {
         method: 'POST',
         body: formData,
       });

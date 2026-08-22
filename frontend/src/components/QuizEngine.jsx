@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE } from '../api';
 
 export default function QuizEngine({ docId }) {
   const [quiz, setQuiz] = useState(null);
@@ -15,7 +16,7 @@ export default function QuizEngine({ docId }) {
     setShowResults(false);
 
     try {
-      const response = await fetch('/api/quiz', {
+      const response = await fetch(`${API_BASE}/api/quiz`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ doc_id: docId })
