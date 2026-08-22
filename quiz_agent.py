@@ -21,8 +21,6 @@ def generate_quiz(text):
     try:
         genai.configure(api_key=api_key)
 
-        model = genai.GenerativeModel("gemini-2.5-flash")
-
         prompt = f"""
 Create 10 MCQ questions from the uploaded notes.
 IMPORTANT:
@@ -46,9 +44,15 @@ Correct Answer: A
 Notes:
 {text}
 """
-        response = model.generate_content(prompt)
-
-        return response.text
+        for model_name in ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-2.5-flash"]:
+            try:
+                model = genai.GenerativeModel(model_name)
+                response = model.generate_content(prompt)
+                return response.text
+            except Exception as e:
+                if "404" in str(e) or "not found" in str(e).lower() or "not available" in str(e).lower():
+                    continue
+                raise e
     except Exception as e:
         err_str = str(e)
         if "Unauthenticated" in err_str or "API_KEY_INVALID" in err_str or "401" in err_str or "PermissionDenied" in err_str:

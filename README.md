@@ -7,7 +7,7 @@ An AI-powered interactive study assistant built with Streamlit, Google Gemini AP
 - 📄 **PDF Text Extraction**: Upload study material or lecture notes in PDF format.
 - 📝 **AI Summarization**: Generate concise, easy-to-understand summaries powered by Google Gemini.
 - ❓ **MCQ Quiz Generator**: Create custom multiple-choice quizzes automatically from your uploaded notes.
-- 🔍 **RAG System (Q&A)**: Perform fast vector search and accurate question answering directly from document context using Gemini `text-embedding-004` and `gemini-2.5-flash`.
+- 🔍 **RAG System (Q&A)**: Perform fast vector search and accurate question answering directly from document context using Gemini `text-embedding-004` and `gemini-1.5-flash`.
 
 ---
 
@@ -74,7 +74,7 @@ Open your browser at `http://localhost:8501`.
 ## 🛠️ Tech Stack
 
 - **Frontend/App Framework**: Streamlit
-- **LLM & Embeddings**: Google Gemini API (`gemini-2.5-flash`, `text-embedding-004`)
+- **LLM & Embeddings**: Google Gemini API (`gemini-1.5-flash`, `text-embedding-004`)
 - **PDF Processing**: PyPDF2
 - **Vector Operations**: NumPy
 - **Database**: SQLite3

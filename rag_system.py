@@ -135,7 +135,6 @@ class RAGSystem:
             return "⚠️ **Gemini API Key Missing**: Please set `GEMINI_API_KEY` in your environment variables or Streamlit Cloud Secrets.", []
 
         try:
-            model = genai.GenerativeModel("gemini-2.5-flash")
             relevant_chunks = self.retrieve(query, top_k=top_k)
             context = "\n\n---\n\n".join(relevant_chunks)
 
@@ -151,8 +150,15 @@ Question:
 
 Answer:
 """
-            response = model.generate_content(prompt)
-            return response.text, relevant_chunks
+            for model_name in ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-2.5-flash"]:
+                try:
+                    model = genai.GenerativeModel(model_name)
+                    response = model.generate_content(prompt)
+                    return response.text, relevant_chunks
+                except Exception as e:
+                    if "404" in str(e) or "not found" in str(e).lower() or "not available" in str(e).lower():
+                        continue
+                    raise e
         except Exception as e:
             err_str = str(e)
             if "Unauthenticated" in err_str or "API_KEY_INVALID" in err_str or "401" in err_str or "PermissionDenied" in err_str:
