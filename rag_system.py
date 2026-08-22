@@ -4,7 +4,6 @@ import streamlit as st
 import google.generativeai as genai
 
 EMBEDDING_MODEL = "models/text-embedding-004"
-FALLBACK_API_KEY = "AQ.Ab8RN6Kptadz8MH2ZRVL3eKUBvOIMfzVnDMHDDWK14wCNrfhkA"
 
 
 def get_api_key():
@@ -18,9 +17,9 @@ def get_api_key():
         except Exception:
             pass
 
-    # 3. Fallback Key
-    if not key:
-        key = FALLBACK_API_KEY
+    # 3. Session State
+    if not key and "gemini_api_key" in st.session_state:
+        key = st.session_state.get("gemini_api_key")
 
     return key
 
@@ -29,6 +28,8 @@ def configure_genai():
     key = get_api_key()
     if key:
         genai.configure(api_key=key)
+        return True
+    return False
 
 
 def chunk_text(text, chunk_size=1500, overlap=150):

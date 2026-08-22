@@ -2,9 +2,6 @@ import os
 import streamlit as st
 import google.generativeai as genai
 
-# Default key fallback if environment/secrets are not configured
-FALLBACK_API_KEY = "AQ.Ab8RN6Kptadz8MH2ZRVL3eKUBvOIMfzVnDMHDDWK14wCNrfhkA"
-
 def get_api_key():
     key = os.getenv("GEMINI_API_KEY") or os.getenv("GEMINI_KEY")
     if not key and hasattr(st, "secrets"):
@@ -12,14 +9,16 @@ def get_api_key():
             key = st.secrets.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_KEY")
         except Exception:
             pass
-    if not key:
-        key = FALLBACK_API_KEY
+    if not key and "gemini_api_key" in st.session_state:
+        key = st.session_state.get("gemini_api_key")
     return key
 
 def generate_summary(text):
     api_key = get_api_key()
-    if api_key:
-        genai.configure(api_key=api_key)
+    if not api_key:
+        return "⚠️ Error: Gemini API Key is missing. Please set GEMINI_API_KEY in your environment, Streamlit secrets, or sidebar."
+    
+    genai.configure(api_key=api_key)
 
     model = genai.GenerativeModel("gemini-2.5-flash")
 
