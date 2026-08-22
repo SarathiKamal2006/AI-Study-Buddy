@@ -3,24 +3,24 @@ import numpy as np
 import streamlit as st
 import google.generativeai as genai
 
-API_KEY = os.getenv("GEMINI_API_KEY")
-if API_KEY:
-    genai.configure(api_key=API_KEY)
-
-model = genai.GenerativeModel("gemini-2.5-flash")
 EMBEDDING_MODEL = "models/text-embedding-004"
+FALLBACK_API_KEY = "AQ.Ab8RN6Kptadz8MH2ZRVL3eKUBvOIMfzVnDMHDDWK14wCNrfhkA"
 
 
 def get_api_key():
     # 1. Environment Variable
-    key = os.getenv("GEMINI_API_KEY") or os.getenv("AQ.Ab8RN6Kptadz8MH2ZRVL3eKUBvOIMfzVnDMHDDWK14wCNrfhkA")
+    key = os.getenv("GEMINI_API_KEY") or os.getenv("GEMINI_KEY")
 
     # 2. Streamlit Secrets
     if not key and hasattr(st, "secrets"):
         try:
-            key = st.secrets.get("GEMINI_API_KEY") or st.secrets.get("AQ.Ab8RN6Kptadz8MH2ZRVL3eKUBvOIMfzVnDMHDDWK14wCNrfhkA")
+            key = st.secrets.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_KEY")
         except Exception:
             pass
+
+    # 3. Fallback Key
+    if not key:
+        key = FALLBACK_API_KEY
 
     return key
 
