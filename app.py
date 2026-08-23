@@ -20,6 +20,17 @@ st.set_page_config(
 # Custom Dark Glassmorphism Styling
 st.markdown("""
 <style>
+    /* Hide Streamlit Top Header, Toolbar, Star, Edit, and GitHub icons */
+    #MainMenu {visibility: hidden; display: none !important;}
+    header {visibility: hidden; display: none !important;}
+    footer {visibility: hidden; display: none !important;}
+    div[data-testid="stToolbar"] {visibility: hidden; display: none !important;}
+    div[data-testid="stDecoration"] {visibility: hidden; display: none !important;}
+    div[data-testid="stStatusWidget"] {visibility: hidden; display: none !important;}
+    div[data-testid="stHeader"] {visibility: hidden; display: none !important;}
+    .stAppHeader {display: none !important;}
+    button[title="View source on GitHub"] {display: none !important;}
+
     .main-title {
         font-size: 2.5rem;
         font-weight: 800;
@@ -46,6 +57,7 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 # Helper: Get Gemini API Key
