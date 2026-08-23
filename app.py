@@ -52,7 +52,9 @@ st.markdown("""
 def get_api_key():
     # 1. Session State user key
     if st.session_state.get("user_gemini_key"):
-        return st.session_state["user_gemini_key"].strip()
+        k = st.session_state["user_gemini_key"].strip()
+        if k and k != "your_gemini_api_key_here" and not k.startswith("your_"):
+            return k
 
     # 2. Environment variable or .env file
     key = os.getenv("GEMINI_API_KEY") or os.getenv("GEMINI_KEY")
@@ -64,15 +66,19 @@ def get_api_key():
         except Exception:
             pass
 
-    if key and isinstance(key, str) and key.strip() and key.strip() != "your_gemini_api_key_here":
-        return key.strip()
+    if key and isinstance(key, str):
+        key = key.strip()
+        if key and key != "your_gemini_api_key_here" and not key.startswith("your_"):
+            return key
 
     return None
 
 
-
 # Helper: Call Gemini API with automatic model fallback on 429 Quota / 404 errors
 def call_gemini_with_fallback(prompt, api_key):
+    if not api_key or api_key == "your_gemini_api_key_here" or api_key.startswith("your_"):
+        return "🔑 **Gemini API Key Missing**: Please paste your Gemini API Key into your `.env` file (`GEMINI_API_KEY=AIzaSy...`). Get a free key at [Google AI Studio](https://aistudio.google.com/)."
+
     genai.configure(api_key=api_key)
 
     # Standard free-tier supported models (prioritizing gemini-1.5-flash which has stable quota)
@@ -113,16 +119,19 @@ def call_gemini_with_fallback(prompt, api_key):
             # If 429 (Quota Exceeded) or 404 (Not Found), automatically move to the next model!
             if "429" in err_msg or "quota" in err_msg or "404" in err_msg or "not found" in err_msg or "limit: 0" in err_msg or "resource_exhausted" in err_msg:
                 continue
-            if "unauthenticated" in err_msg or "api_key_invalid" in err_msg or "401" in err_msg or "permissiondenied" in err_msg:
-                raise e
+            if "403" in err_msg or "denied access" in err_msg or "unauthenticated" in err_msg or "api_key_invalid" in err_msg or "401" in err_msg or "permissiondenied" in err_msg:
+                break
 
     if last_error:
         err_str = str(last_error)
+        if "403" in err_str or "denied access" in err_str.lower() or "permissiondenied" in err_str.lower():
+            return "🔑 **Gemini API Key Access Denied (HTTP 403)**: The API Key in your `.env` file is invalid, placeholder, or expired. Please generate a free API Key at [Google AI Studio](https://aistudio.google.com/) and paste it into `.env` (`GEMINI_API_KEY=AIzaSy...`)."
         if "429" in err_str or "quota" in err_str.lower() or "resource_exhausted" in err_str.lower():
             return "⚠️ **Rate Limit / Quota Reached**: All free-tier models are currently rate-limited. Please wait 10 seconds and click again."
         return f"⚠️ **Error generating content**: {err_str}"
 
     return "Could not generate content from Gemini API."
+
 
 
 # Helper: Extract text from PDF
