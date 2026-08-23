@@ -1,8 +1,6 @@
 [server]
 headless = true
 enableCORS = false
-enableXsrfProtection = false
-maxUploadSize = 200
 port = 8501
 
 [theme]
@@ -11,7 +9,3 @@ backgroundColor = "#0F172A"
 secondaryBackgroundColor = "#1E293B"
 textColor = "#F8FAFC"
 font = "sans serif"
-
-[client]
-toolbarMode = "off"
-showErrorDetails = false
