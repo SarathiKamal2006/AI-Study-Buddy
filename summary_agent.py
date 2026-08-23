@@ -19,6 +19,9 @@ def get_api_key():
     return key if key else None
 
 def generate_summary(text):
+    if not text or not str(text).strip():
+        return "⚠️ **Empty Document**: Could not extract readable text from this PDF. Please make sure the PDF contains selectable text (not scanned image pages)."
+
     api_key = get_api_key()
     if not api_key:
         return "⚠️ **Gemini API Key Missing**: Please set `GEMINI_API_KEY` in your environment variables or Streamlit Cloud Secrets."
@@ -27,20 +30,39 @@ def generate_summary(text):
         genai.configure(api_key=api_key)
         
         prompt = f"""
-        Summarize the following notes in simple language:
+        Summarize the following notes in simple language with clear bullet points and main key concepts:
 
         {text}
         """
 
-        for model_name in ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-2.5-flash"]:
+        candidate_models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash", "gemini-2.0-flash-exp"]
+        last_error = None
+
+        for model_name in candidate_models:
             try:
                 model = genai.GenerativeModel(model_name)
                 response = model.generate_content(prompt)
-                return response.text
+                if response and hasattr(response, "text") and response.text:
+                    return response.text
+                elif response and hasattr(response, "parts") and response.parts:
+                    return "".join(part.text for part in response.parts if hasattr(part, "text"))
             except Exception as e:
-                if "404" in str(e) or "not found" in str(e).lower() or "not available" in str(e).lower():
+                last_error = e
+                err_msg = str(e).lower()
+                if "404" in err_msg or "not found" in err_msg or "not available" in err_msg:
                     continue
-                raise e
+                if "unauthenticated" in err_msg or "api_key_invalid" in err_msg or "401" in err_msg or "permissiondenied" in err_msg or "quota" in err_msg:
+                    break
+
+        if last_error:
+            err_str = str(last_error)
+            if "Unauthenticated" in err_str or "API_KEY_INVALID" in err_str or "401" in err_str or "PermissionDenied" in err_str:
+                return "🔑 **Authentication Failed**: The Gemini API Key configured in Streamlit Secrets or environment variables is invalid or expired."
+            if "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower() or "429" in err_str:
+                return "⚠️ **API Quota Exceeded**: Your Gemini API Key has reached its rate/quota limit. Please check your Google AI Studio quota."
+            return f"⚠️ **Error generating summary**: {err_str}"
+
+        return "⚠️ **Error generating summary**: Unable to get response from Gemini API. Please check your API key and connection."
     except Exception as e:
         err_str = str(e)
         if "Unauthenticated" in err_str or "API_KEY_INVALID" in err_str or "401" in err_str or "PermissionDenied" in err_str:

@@ -67,7 +67,8 @@ async def upload_document(file: UploadFile = File(...)):
     try:
         raw_text = extract_text(file.file)
         if not raw_text or not raw_text.strip():
-            raise HTTPException(status_code=400, detail="Could not extract text from the uploaded PDF.")
+            raise HTTPException(status_code=400, detail="Could not extract readable text from the uploaded PDF. Please make sure the PDF contains selectable text (not scanned images or blank slides).")
+
 
         doc_id = str(uuid.uuid4())
         rag_sys = RAGSystem(raw_text)
