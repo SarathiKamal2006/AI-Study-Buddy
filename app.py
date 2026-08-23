@@ -71,28 +71,58 @@ def get_api_key():
 
 
 
-# Helper: Dynamically find active Gemini model
-def get_gemini_model(api_key):
+# Helper: Call Gemini API with automatic model fallback on 429 Quota / 404 errors
+def call_gemini_with_fallback(prompt, api_key):
     genai.configure(api_key=api_key)
+
+    # Standard free-tier supported models (prioritizing gemini-1.5-flash which has stable quota)
+    candidate_models = [
+        "models/gemini-1.5-flash",
+        "gemini-1.5-flash",
+        "models/gemini-2.0-flash",
+        "gemini-2.0-flash",
+        "models/gemini-1.5-pro",
+        "gemini-1.5-pro",
+        "models/gemini-pro",
+        "gemini-pro"
+    ]
+
     try:
-        models = [m.name for m in genai.list_models() if 'generateContent' in getattr(m, 'supported_generation_methods', [])]
-        priority_keywords = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-pro", "flash"]
-        for kw in priority_keywords:
-            for m in models:
-                if kw in m:
-                    return genai.GenerativeModel(m)
-        if models:
-            return genai.GenerativeModel(models[0])
+        api_models = [m.name for m in genai.list_models() if 'generateContent' in getattr(m, 'supported_generation_methods', [])]
+        for m in api_models:
+            # Exclude experimental or 3.1 models that return limit: 0 on free tier
+            if "3.1" in m or "exp" in m:
+                continue
+            if m not in candidate_models:
+                candidate_models.append(m)
     except Exception:
         pass
-    
-    # Fallbacks with and without 'models/' prefix
-    for fallback in ["models/gemini-1.5-flash", "gemini-1.5-flash", "models/gemini-pro", "gemini-pro"]:
+
+    last_error = None
+    for model_name in candidate_models:
         try:
-            return genai.GenerativeModel(fallback)
-        except Exception:
-            continue
-    raise Exception("No valid Gemini model available. Please check your Gemini API key.")
+            model = genai.GenerativeModel(model_name)
+            res = model.generate_content(prompt)
+            if res and hasattr(res, "text") and res.text:
+                return res.text
+            elif res and hasattr(res, "parts") and res.parts:
+                return "".join(p.text for p in res.parts if hasattr(p, "text"))
+        except Exception as e:
+            last_error = e
+            err_msg = str(e).lower()
+            # If 429 (Quota Exceeded) or 404 (Not Found), automatically move to the next model!
+            if "429" in err_msg or "quota" in err_msg or "404" in err_msg or "not found" in err_msg or "limit: 0" in err_msg or "resource_exhausted" in err_msg:
+                continue
+            if "unauthenticated" in err_msg or "api_key_invalid" in err_msg or "401" in err_msg or "permissiondenied" in err_msg:
+                raise e
+
+    if last_error:
+        err_str = str(last_error)
+        if "429" in err_str or "quota" in err_str.lower() or "resource_exhausted" in err_str.lower():
+            return "⚠️ **Rate Limit / Quota Reached**: All free-tier models are currently rate-limited. Please wait 10 seconds and click again."
+        return f"⚠️ **Error generating content**: {err_str}"
+
+    return "Could not generate content from Gemini API."
 
 
 # Helper: Extract text from PDF
@@ -216,12 +246,7 @@ def generate_summary(text, rag_engine):
     {context}
     """
 
-    try:
-        model = get_gemini_model(api_key)
-        res = model.generate_content(prompt)
-        return res.text if res and res.text else "Could not generate summary."
-    except Exception as e:
-        return f"⚠️ **Error generating summary**: {str(e)}"
+    return call_gemini_with_fallback(prompt, api_key)
 
 
 # Core Feature: Generate 10 MCQ Quiz
@@ -258,10 +283,11 @@ def generate_10_mcq_quiz(text, rag_engine):
     """
 
     try:
-        model = get_gemini_model(api_key)
-        res = model.generate_content(prompt)
-        raw = res.text.strip() if res and res.text else ""
-
+        raw = call_gemini_with_fallback(prompt, api_key)
+        if raw.startswith("⚠️"):
+            return None, raw
+            
+        raw = raw.strip()
         # Clean JSON fences if model returns markdown
         if raw.startswith("```"):
             raw = re.sub(r'^```(?:json)?', '', raw, flags=re.IGNORECASE)
@@ -297,13 +323,9 @@ def answer_rag_question(query, rag_engine):
     Answer:
     """
 
-    try:
-        model = get_gemini_model(api_key)
-        res = model.generate_content(prompt)
-        answer = res.text if res and res.text else "No answer generated."
-        return answer, retrieved_chunks
-    except Exception as e:
-        return f"⚠️ **Error generating answer**: {str(e)}", []
+    ans = call_gemini_with_fallback(prompt, api_key)
+    return ans, retrieved_chunks
+
 
 
 # ================= MAIN STREAMLIT APPLICATION =================
