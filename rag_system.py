@@ -155,7 +155,42 @@ Question:
 
 Answer:
 """
-            candidate_models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash", "gemini-2.0-flash-exp"]
+            # Try dynamic models from API
+            try:
+                available_models = [m.name for m in genai.list_models() if 'generateContent' in getattr(m, 'supported_generation_methods', [])]
+                priority_keywords = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-pro", "flash"]
+                sorted_models = []
+                for kw in priority_keywords:
+                    for m in available_models:
+                        if kw in m and m not in sorted_models:
+                            sorted_models.append(m)
+                for m in available_models:
+                    if m not in sorted_models:
+                        sorted_models.append(m)
+
+                for model_name in sorted_models:
+                    try:
+                        model = genai.GenerativeModel(model_name)
+                        response = model.generate_content(prompt)
+                        if response and hasattr(response, "text") and response.text:
+                            return response.text, relevant_chunks
+                        elif response and hasattr(response, "parts") and response.parts:
+                            return "".join(part.text for part in response.parts if hasattr(part, "text")), relevant_chunks
+                    except Exception:
+                        continue
+            except Exception:
+                pass
+
+            candidate_models = [
+                "models/gemini-1.5-flash",
+                "gemini-1.5-flash",
+                "models/gemini-1.5-pro",
+                "gemini-1.5-pro",
+                "models/gemini-pro",
+                "gemini-pro",
+                "models/gemini-2.0-flash",
+                "gemini-2.0-flash"
+            ]
             last_error = None
 
             for model_name in candidate_models:
@@ -188,4 +223,5 @@ Answer:
             if "Unauthenticated" in err_str or "API_KEY_INVALID" in err_str or "401" in err_str or "PermissionDenied" in err_str:
                 return "🔑 **Authentication Failed**: The Gemini API Key configured in Streamlit Secrets or environment variables is invalid or expired.", []
             return f"⚠️ **Error generating answer**: {err_str}", []
+
 

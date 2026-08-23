@@ -35,7 +35,43 @@ def generate_summary(text):
         {text}
         """
 
-        candidate_models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash", "gemini-2.0-flash-exp"]
+        # 1. Dynamically fetch models available for this API key
+        try:
+            available_models = [m.name for m in genai.list_models() if 'generateContent' in getattr(m, 'supported_generation_methods', [])]
+            priority_keywords = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-pro", "flash"]
+            sorted_models = []
+            for kw in priority_keywords:
+                for m in available_models:
+                    if kw in m and m not in sorted_models:
+                        sorted_models.append(m)
+            for m in available_models:
+                if m not in sorted_models:
+                    sorted_models.append(m)
+                    
+            for model_name in sorted_models:
+                try:
+                    model = genai.GenerativeModel(model_name)
+                    response = model.generate_content(prompt)
+                    if response and hasattr(response, "text") and response.text:
+                        return response.text
+                    elif response and hasattr(response, "parts") and response.parts:
+                        return "".join(part.text for part in response.parts if hasattr(part, "text"))
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
+        # 2. Hardcoded fallback list (with both 'models/' prefix and without)
+        candidate_models = [
+            "models/gemini-1.5-flash",
+            "gemini-1.5-flash",
+            "models/gemini-1.5-pro",
+            "gemini-1.5-pro",
+            "models/gemini-pro",
+            "gemini-pro",
+            "models/gemini-2.0-flash",
+            "gemini-2.0-flash"
+        ]
         last_error = None
 
         for model_name in candidate_models:

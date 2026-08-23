@@ -84,7 +84,47 @@ JSON format requirement:
 Notes:
 {text}
 """
-        candidate_models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash", "gemini-2.0-flash-exp"]
+        # Try dynamic models from API
+        try:
+            available_models = [m.name for m in genai.list_models() if 'generateContent' in getattr(m, 'supported_generation_methods', [])]
+            priority_keywords = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-pro", "flash"]
+            sorted_models = []
+            for kw in priority_keywords:
+                for m in available_models:
+                    if kw in m and m not in sorted_models:
+                        sorted_models.append(m)
+            for m in available_models:
+                if m not in sorted_models:
+                    sorted_models.append(m)
+
+            for model_name in sorted_models:
+                try:
+                    model = genai.GenerativeModel(model_name)
+                    response = model.generate_content(prompt)
+                    raw = (response.text if response and hasattr(response, "text") else "").strip()
+                    if not raw and response and hasattr(response, "parts") and response.parts:
+                        raw = "".join(part.text for part in response.parts if hasattr(part, "text")).strip()
+                    if raw:
+                        if raw.startswith("```"):
+                            raw = re.sub(r'^```(?:json)?', '', raw, flags=re.IGNORECASE)
+                            raw = re.sub(r'```$', '', raw).strip()
+                        parsed = json.loads(raw)
+                        return parsed
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
+        candidate_models = [
+            "models/gemini-1.5-flash",
+            "gemini-1.5-flash",
+            "models/gemini-1.5-pro",
+            "gemini-1.5-pro",
+            "models/gemini-pro",
+            "gemini-pro",
+            "models/gemini-2.0-flash",
+            "gemini-2.0-flash"
+        ]
         last_error = None
 
         for model_name in candidate_models:
@@ -106,7 +146,6 @@ Notes:
                 err_msg = str(e).lower()
                 if "404" in err_msg or "not found" in err_msg or "not available" in err_msg:
                     continue
-                # Try fallback text parser if JSON parse fails
                 try:
                     fallback_text = generate_quiz(text)
                     parsed_fallback = parse_quiz_text_to_json(fallback_text)
@@ -155,7 +194,41 @@ Correct Answer: A
 Notes:
 {text}
 """
-        candidate_models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash", "gemini-2.0-flash-exp"]
+        try:
+            available_models = [m.name for m in genai.list_models() if 'generateContent' in getattr(m, 'supported_generation_methods', [])]
+            priority_keywords = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-pro", "flash"]
+            sorted_models = []
+            for kw in priority_keywords:
+                for m in available_models:
+                    if kw in m and m not in sorted_models:
+                        sorted_models.append(m)
+            for m in available_models:
+                if m not in sorted_models:
+                    sorted_models.append(m)
+
+            for model_name in sorted_models:
+                try:
+                    model = genai.GenerativeModel(model_name)
+                    response = model.generate_content(prompt)
+                    if response and hasattr(response, "text") and response.text:
+                        return response.text
+                    elif response and hasattr(response, "parts") and response.parts:
+                        return "".join(part.text for part in response.parts if hasattr(part, "text"))
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
+        candidate_models = [
+            "models/gemini-1.5-flash",
+            "gemini-1.5-flash",
+            "models/gemini-1.5-pro",
+            "gemini-1.5-pro",
+            "models/gemini-pro",
+            "gemini-pro",
+            "models/gemini-2.0-flash",
+            "gemini-2.0-flash"
+        ]
         last_error = None
 
         for model_name in candidate_models:
