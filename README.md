@@ -1,76 +1,50 @@
-# 📚 AI Study Buddy (React + FastAPI)
+# 📚 AI Study Buddy (Streamlit + Gemini RAG)
 
-An AI-powered interactive study assistant built with a **React 18** single page application frontend, **FastAPI** REST backend, Google Gemini API, PyPDF2, and RAG (Retrieval-Augmented Generation).
+An AI-powered interactive study assistant built with **Streamlit**, **Google Gemini API**, **RAG (Retrieval-Augmented Generation)**, **NumPy**, and **PyPDF2**.
+
+---
 
 ## ✨ Features
 
-- 📄 **PDF Extraction**: Upload lecture notes or textbooks in PDF format.
-- 📝 **AI Summarization**: Generate clear, formatted document summaries using Gemini API.
-- 🎯 **Interactive MCQ Quiz Engine**: Take custom interactive multiple-choice practice quizzes with instant score tracking.
-- 🔍 **RAG Vector Search Q&A**: Perform fast vector similarity retrieval and question answering with expandable document chunk context using `text-embedding-004` and `gemini-1.5-flash`.
+- 📄 **PDF Text Extraction**: Upload lecture notes, articles, or textbooks.
+- ⚡ **RAG Vector Search Engine**: Automatically chunks documents, computes embeddings using `models/text-embedding-004`, and performs vector similarity retrieval with NumPy cosine distance.
+- 📝 **AI Document Summarizer**: Generates clear, structured study summaries (Key Highlights, Core Concepts, Takeaways).
+- 🎯 **Interactive 10 MCQ Practice Quiz**: Generates 10 custom practice multiple-choice questions with options (A, B, C, D), interactive radio selection, score calculation (e.g., 8/10), and detailed explanations.
+- 🔍 **RAG Q&A Assistant**: Ask specific questions and view exact document context source chunks used to generate answers.
 
 ---
 
-## 🚀 Quick Start
+## 🚀 How to Run Locally
 
-### 1. Prerequisites
-- Python 3.9+
-- Node.js 18+ and npm
-- Google Gemini API Key (Get one free from [Google AI Studio](https://aistudio.google.com/))
-
-### 2. Environment Setup
-
-Set your Gemini API Key in your terminal:
-
-**On Linux / macOS:**
-```bash
-export GEMINI_API_KEY="your_api_key_here"
-```
-
-**On Windows (PowerShell):**
+### 1. Install Dependencies
 ```powershell
-$env:GEMINI_API_KEY="your_api_key_here"
-```
-
----
-
-### 3. Running the FastAPI Backend
-
-```bash
-# Install Python dependencies
 pip install -r requirements.txt
-
-# Start FastAPI server
-uvicorn main:app --reload --port 8000
 ```
 
-FastAPI server runs at `http://localhost:8000` (API documentation at `http://localhost:8000/docs`).
+### 2. Set Your Gemini API Key
+Option A — In your PowerShell terminal:
+```powershell
+$env:GEMINI_API_KEY="your_actual_gemini_api_key_here"
+```
+
+Option B — Enter your key directly in the app's sidebar UI!
+
+### 3. Run the Streamlit App
+```powershell
+python -m streamlit run app.py
+```
 
 ---
 
-### 4. Running the React Frontend
+## 🌐 Deploy Free to Streamlit Cloud
 
-Open a new terminal window:
-
-```bash
-cd frontend
-
-# Install Node dependencies
-npm install
-
-# Start Vite dev server
-npm run dev
-```
-
-Open your browser at `http://localhost:3000`.
-
----
-
-## 🛠️ Tech Stack
-
-- **Frontend**: React 18, Vite, Lucide React, Glassmorphic Vanilla CSS Design System
-- **Backend API**: FastAPI, Uvicorn, Pydantic, Python 3.11
-- **LLM & Embeddings**: Google Gemini API (`gemini-1.5-flash`, `text-embedding-004`)
-- **PDF Processing**: PyPDF2
-- **Vector Operations**: NumPy
-- **Database**: SQLite3
+1. Push your code to GitHub repository `SarathiKamal2006/AI-Study-Buddy`.
+2. Go to **[share.streamlit.io](https://share.streamlit.io/)** and sign in.
+3. Click **New App** and select:
+   - **Repository:** `SarathiKamal2006/AI-Study-Buddy`
+   - **Main file path:** `app.py`
+4. Under **Secrets**, add:
+   ```toml
+   GEMINI_API_KEY = "your_api_key_here"
+   ```
+5. Click **Deploy**!
